@@ -25,6 +25,18 @@ func Recover(handler Handler) {
 	}
 }
 
+func Forward(errPtr *error) {
+	if errPtr == nil {
+		return
+	}
+
+	Recover(func(p *Panic) {
+		if *errPtr == nil {
+			*errPtr = p
+		}
+	})
+}
+
 type Panic struct {
 	Time  time.Time   `json:"time" yaml:"time"`
 	Value interface{} `json:"value" yaml:"value"`
