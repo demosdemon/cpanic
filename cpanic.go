@@ -14,15 +14,13 @@ func Recover(handler Handler) {
 	}
 
 	if value := recover(); value != nil {
-		var trace [1 << 16]byte
-		n := runtime.Stack(trace[:], true)
-		p := &Panic{
-			Time:  time.Now(),
-			Value: value,
-			Trace: string(trace[:n]),
-		}
-		handler(p)
+		handler(New(value))
 	}
+}
+
+func Go(fn func() error) (err error) {
+	defer Forward(&err)
+	return fn()
 }
 
 func Forward(errPtr *error) {
@@ -30,11 +28,11 @@ func Forward(errPtr *error) {
 		return
 	}
 
-	Recover(func(p *Panic) {
+	if value := recover(); value != nil {
 		if *errPtr == nil {
-			*errPtr = p
+			*errPtr = New(value)
 		}
-	})
+	}
 }
 
 type Panic struct {
@@ -49,4 +47,15 @@ func (p *Panic) Error() string {
 
 func (p *Panic) String() string {
 	return fmt.Sprintf("%s\n\n%s", p.Error(), p.Trace)
+}
+
+func New(v interface{}) *Panic {
+	var trace [1 << 16]byte
+	n := runtime.Stack(trace[:], true)
+	p := &Panic{
+		Time:  time.Now(),
+		Value: v,
+		Trace: string(trace[:n]),
+	}
+	return p
 }
