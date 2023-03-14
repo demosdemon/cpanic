@@ -75,6 +75,13 @@ func (p *Panic) String() string {
 	return fmt.Sprintf("%s\n\n%s", p.Error(), p.Trace)
 }
 
+// Unwrap implements the `errors.Unwrap` interface and returns the panic value as an
+// error, if it is one.
+func (p *Panic) Unwrap() error {
+	err, _ := p.Value.(error)
+	return err
+}
+
 // New creates a new `*Panic` from the provided value. Stack traces for all goroutines
 // are collected during construction. This is expected to be used during panic recovery.
 func New(v interface{}) *Panic {
